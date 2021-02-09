@@ -39,7 +39,7 @@ public class DataExportUtils<T> {
         //创建工作簿
         HSSFSheet mySheet = workBook.createSheet();
         mySheet.setDefaultColumnWidth(15);//设置单元格的默认宽度
-        mySheet.createFreezePane(1,2,1,2);//冻结单元格第一个参数表示要冻结的列数；第二个参数表示要冻结的行数，这里只冻结列所以为0; 第三个参数表示右边区域可见的首列序号，从1开始计算；第四个参数表示下边区域可见的首行序号，也是从1开始计算，这里是冻结列，所以为0；
+        mySheet.createFreezePane(1,2,1,2);//冻结单元格.第一个参数表示要冻结的列数；第二个参数表示要冻结的行数，这里只冻结列所以为0; 第三个参数表示右边区域可见的首列序号，从1开始计算；第四个参数表示下边区域可见的首行序号，也是从1开始计算，这里是冻结列，所以为0；
         //设置工作簿的名字
         workBook.setSheetName(0, sheetName);
         //创建第一行，标题行
