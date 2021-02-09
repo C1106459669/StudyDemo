@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+
+    <!-- dependencies -->
+    <link rel="stylesheet" type="text/css" href="../../static/plugins/jointjs/joint.css"/>
+    <script src="../../static/plugins/jQuery/jquery-2.2.3.min.js"></script>
+    <script src="../../static/plugins/jointjs/lodash.js"></script>
+    <script src="../../static/plugins/jointjs/backbone.js"></script>
+    <script src="../../static/plugins/jointjs/joint.js"></script>
+
+</head>
+<body>
+<!-- content -->
+<div id="test">
+    <button type="button" id="download">导出</button>
+</div>
+<div id="paper" class="paper" style="width:1200px;height:2000px;"></div>
+
+<!-- code -->
+<script type="text/javascript">
+    $(document).ready(function () {
+        //空白处鼠标单击事件
+        paper.on('blank:pointerdown', function () {
+            console.log("我是空白处，我被单击了");
+            // debugger
+            //可重新渲染cell的属性
+            var cells = graph.getCells();
+            if (cells && cells.length > 0) {
+                for (let i = 0; i < cells.length; i++) {
+                    if (cells[i].attributes.attrs.body) {
+                        cells[i].attr('body/fill', 'yellow')
+                    }
+
+                }
+            }
+        });
+    });
+
+    $(function () {
+        $("#download").on("click",function () {
+<!--            $.ajax({-->
+<!--                type: 'GET',-->
+<!--                url: 'http://127.0.0.1:8080/user/exportAll',-->
+<!--                dataType: 'text',-->
+<!--                /*crossDomain: true,*/-->
+<!--                success: function () {-->
+
+<!--                },-->
+<!--                error: function () {-->
+
+<!--                }-->
+<!--            });-->
+
+            window.location.href="http://127.0.0.1:8080/fastdfsFileUploadInfo/getAll"
+        });
+
+        //所有图形元素的鼠标双击事件
+        paper.on('element:pointerdblclick', function(elementView) {
+            console.log("图形元素双击事件")
+            var currentElement = elementView.model;
+            currentElement.attr('body/fill', 'orange')
+            console.log(currentElement,"currentElement双击")
+        });
+        //所有图形元素的鼠标单击事件
+        // paper.on('element:pointerdown', function(elementView) {
+        //     console.log("图形元素单击事件")
+        //     const currentElement = elementView.model;
+        //     console.log(currentElement,"currentElement单击")
+        //     currentElement.attr('body/fill', 'orange')
+        //     currentElement.attr('label/fill', 'red')
+        //     var elements = graph.getElements();
+        //     console.log(elements,"elements")
+        //     var a = "abc-g1";
+        //     var arr = a.substring(a.length - 2,a.length - 1);
+        //     console.log(arr,"999")
+        // });
+        //所有元素（包括图形和连接线）的鼠标单击事件（事件放在$(function(){});外面也行，放在paper后面即可）
+        paper.on('cell:pointerdown', function (cellView) {
+            console.log("所有图形单击事件")
+            //可重新渲染cell的属性
+            var currentCell = cellView.model;
+            var isElement = cellView.model.isElement();
+            console.log("当前元素是否是图形：" + isElement)
+            var isLink = cellView.model.isLink();
+            console.log("当前元素是否是连接线：" + isLink)
+            var tmp = cellView.model.attr('label/text').replace(/[\r\n]/g, "");//获得流程框中的内容
+            //可根据tmp进行判断进行我们的业务流程处理 流程框的内容
+            console.log(tmp,"tmp")
+            var currentId = cellView.model.id;//当前被点击元素的图形id
+            console.log(currentId,"currentId")
+            currentCell.attr("label/font-weight","bolder");//设置字体加粗
+            currentCell.attr("label/font-family","楷体");//设置字体
+        });
+        //连接线元素的鼠标双击事件
+        paper.on('link:pointerdblclick', function (linkView) {
+            console.log("我是连接线，我被双击了")
+            resetAll(this);
+            const currentLink = linkView.model;
+            currentLink.attr('line/stroke', 'orange')
+            currentLink.label(0, {
+                attrs: {
+                    body: {
+                        stroke: 'orange'
+                    }
+                }
+            })
+        });
+        //连接线元素的鼠标单击事件（paper.on绑定的单击事件必须在joint.dia.LinkView.extend中有定义，否则此事件不会被触发）
+        paper.on('link:pointerdown', function (linkView) {
+            console.log("我是连接线，我被单击了")
+            const currentId = linkView.model.id;//当前被点击的连接线的id
+            console.log(currentId,"currentId")
+            var isLink = graph.getCell(currentId).isLink();
+            console.log(isLink,"isLink")
+            var currentLink = linkView.model;//当前被点击的连接线对象
+            currentLink.attr('line/stroke', 'red')
+            resetAll(this);
+        });
+        // //连接线元素的鼠标移入事件
+        // paper.on('link:mouseenter', function (e) {
+        //     console.log("我是连接线，鼠标移到我身上了")
+        //     var currentId = e.model.id;//当前被点击元素的图形id
+        //     console.log(currentId,"currentId")
+        //     var isLink = graph.getCell(currentId).isLink();
+        //     console.log(isLink,"isLink")
+        // });
+        //空白处鼠标双击事件
+        paper.on('blank:pointerdblclick', function () {
+            console.log("我被双击了");
+            resetAll(this);
+            this.drawBackground({
+                color: 'orange'
+            })
+        });
+    });
+
+    //所有元素恢复默认样式
+    function resetAll(paper) {
+        paper.drawBackground({
+            color: 'white'
+        })
+
+        var elements = paper.model.getElements();//获取所有的图形元素对象
+        console.log(elements.length,"666")
+        console.log(elements[0],"element")
+        for (var i = 0, ii = elements.length; i < ii; i++) {
+            var currentElement = elements[i];
+            currentElement.attr('body/stroke', 'black');
+            if (i == 0) {
+                var currentId = currentElement.attributes.id;
+                console.log(currentId,"123")
+            }
+        }
+
+        var links = paper.model.getLinks();//获取所有的连接线元素对象
+        console.log(links.length,"777")
+        console.log(links[0],"link")
+        for (var j = 0, jj = links.length; j < jj; j++) {
+            var currentLink = links[j];
+            currentLink.attr('line/stroke', 'black');
+            currentLink.label(0, {
+                attrs: {
+                    body: {
+                        stroke: 'black'
+                    }
+                }
+            })
+        }
+        var cells = paper.model.getCells();//获取所有对象（包括图形和连接线）
+        console.log(cells.length,"888")
+        console.log(cells[0],"cell")
+    }
+
+    //1. 创建图形
+    var graph = new joint.dia.Graph;
+
+    //2. 设定图形不可以移动
+    var ElementView = joint.dia.ElementView.extend({
+        pointerdown: function () {
+            this._click = true;//设为false并且把下面一行代码去掉，表示禁用鼠标单击事件；设为true并加上下面一行代码表示开启图形单击事件
+            joint.dia.ElementView.prototype.pointerdown.apply(this, arguments);
+        },
+        pointermove: function (evt, x, y) {
+            this._click = false;//false 表示设置图形不可移动
+        },
+        pointerup: function (evt, x, y) {
+            this._click = true;
+            if (this._click) {
+                this.notify('cell:click', evt, x, y);
+            } else {
+                joint.dia.ElementView.prototype.pointerup.apply(this, arguments);
+            }
+        }
+    });
+    //3. 设置连接线的样式
+    var LinkView = joint.dia.LinkView.extend({
+        addVertex: function (evt, x, y) {
+        },
+        removeVertex: function (endType) {
+        },
+        pointerdown: function () {//设置连接线的鼠标单击事件，如果这里没有下面这一行代码，那么paper.on('link:pointerdown', function (linkView) {})绑定的单击事件将不会被触发
+            joint.dia.ElementView.prototype.pointerdown.apply(this, arguments);
+        },
+        pointerdblclick: function(evt, x, y) {
+            this.addVertex(x, y);
+        },
+    });
+    //4. 定义画布
+    var paper = new joint.dia.Paper({
+        el: $('#paper'),
+        width: $("#paper").width(),
+        height: $("#paper").height(),
+        gridSize: 1,
+        model: graph,
+        elementView: ElementView,
+        linkView: LinkView
+    });
+
+    //5. 定义形状（x：图形横坐标，y：图形纵坐标，shape：图形形状，shapeX：图形长度，shapeY：图形宽度，background：图形背景颜色，text：图形中标签的文本内容）
+    var state = function (x, y, shape, shapeX, shapeY, background, text) {
+        var cell;
+        if (shape === "rect") {//矩形
+            cell = new joint.shapes.standard.Rectangle();//创建矩形
+            cell.resize(shapeX, shapeY);//设置图形长度和宽度
+            cell.position(x, y);//设置图形的横纵坐标
+            cell.attr('root/title', text);
+            cell.attr('label/text', text);//图形内标签文本内容
+            cell.attr('body/fill', background);//图形背景颜色
+            cell.attr('body/strokeWidth', '0');//图形边框宽度
+        } else if (shape === "ellipse") {//椭圆
+            cell = new joint.shapes.standard.Ellipse();//创建椭圆图形
+            cell.resize(shapeX, shapeY);
+            cell.position(x, y);
+            cell.attr('root/title', text);
+            cell.attr('label/text', text);
+            cell.attr('body/fill', background);
+            cell.attr('body/strokeWidth', '0');
+        } else if (shape == "polygon") {//菱形
+            cell = new joint.shapes.standard.Polygon();//创建正多边形
+            cell.resize(shapeX, shapeY);//100、70
+            cell.position(x, y);
+            cell.attr('root/title', text);
+            cell.attr('body/fill', background);
+            cell.attr('label/text', text);
+            cell.attr('body/refPoints', '0,10 10,0 20,10 10,20');
+            // cell.stroke(background);
+        } else if (shape === "filletrect") {//圆角矩形
+            cell = new joint.shapes.standard.Rectangle();
+            cell.resize(shapeX, shapeY);
+            cell.position(x, y);
+            cell.attr('root/title', text);
+            cell.attr('label/text', text);
+            cell.attr('body/fill', background);
+            cell.attr('body/rx', 20);
+            cell.attr('body/ry', 20);
+            cell.attr('body/strokeWidth', '0');
+        }
+        graph.addCell(cell);
+        return cell;
+    };
+
+    //6. 定义连线
+    function link(source, target, label, labelposition) {
+        var cell = new joint.shapes.standard.Link({
+            source: {id: source.id, selector: '.root'},
+            target: {id: target.id, selector: '.root'},
+            labels: [{
+                position: labelposition,
+                attrs: {text: {text: label || '', 'font-weight': 'bold', 'font-size': '12px'}}
+            }],
+            router: {name: 'manhattan'},//设置连线弯曲样式 manhattan直角
+            attrs: {
+                '.connection': {
+                    stroke: '#333333',//连线颜色
+                    'stroke-width': 2//连线粗细
+                },
+                '.marker-source': {
+                    fill: '#333333',
+                    d: 'M 10 0 L 0 5 L 10 10 z'
+                },
+                '.marker-target': {
+                    fill: '#333333',//箭头颜色
+                    d: 'M 10 0 L 0 5 L 10 10 z'//箭头样式
+                    // d: 'M 10 0 L 0 5 L 10 10 z'//箭头样式
+                },
+                line: {
+                    stroke: '#333333', // SVG attribute and value
+                    'stroke-width': 0.5//连线粗细
+                }
+            }
+        });
+        graph.addCell(cell);
+        return cell;
+    }
+
+    // 7. 定义按钮
+    function createButton() {//x, y, width, height, background
+        var infoButton = new joint.elementTools.Button({
+            focusOpacity: 0.5,
+            // top-right corner
+            x: 50,
+            y: 10,
+            action: function (evt) {
+                alert(111111111111);
+            },
+            markup: [{
+                tagName: 'circle',
+                selector: 'button',
+                attributes: {
+                    'r': 7,
+                    'fill': '#001DFF',
+                    'cursor': 'pointer'
+                }
+            }, {
+                tagName: 'path',
+                selector: 'icon',
+                attributes: {
+                    'd': 'M -2 4 2 4 M 0 3 0 0 M -2 -1 1 -1 M -1 -4 1 -4',
+                    'fill': 'none',
+                    'stroke': '#009688',
+                    'stroke-width': 2,
+                    'pointer-events': 'none'
+                }
+            }]
+        });
+        infoButton = new InfoButton();
+        return infoButton;
+    }
+
+    //7. 创建元素
+    var start = state(725, 50, "filletrect", 150, 40, "yellow", "开始\n（D5000事故分闸）");
+    var pwcl = state(760, 150, "rect", 80, 30, "yellow", "配网处理");
+    var faqzjh = state(730, 240, "polygon", 140, 60, "yellow", joint.util.breakText("FA强制交互？", {width: 100}));
+    var xlxj = state(760, 385, "rect", 80, 30, "yellow", "线路巡检");
+    var fazjhyyfx = state(550, 255, "rect", 120, 30, "yellow", "FA转交互原因分析");
+    var dlyxx = state(310, 250, "rect", 150, 40, "yellow", "电流、有效性校验环节\n不通过，强制转交互");
+    var gjjtjy = state(40, 250, "ellipse", 200, 40, "yellow", "根据具体校验项定位问题");
+    var ssgz = state(310, 315, "rect", 150, 30, "yellow", "瞬时故障，重合闸成功");
+    var faxjjg = state(725, 460, "rect", 150, 30, "yellow", "FA结果与巡检结果比对");
+    var gzfwsh = state(710, 540, "polygon", 180, 60, "yellow", joint.util.breakText("故障范围是否扩大？", {width: 150}));
+    var fazxwb = state(720, 650, "polygon", 160, 60, "yellow", joint.util.breakText("方案执行完毕？", {width: 150}));
+    var fabzqyy = state(530, 555, "rect", 130, 30, "yellow", "FA不准确原因分析");
+    var pdzzwpz = state(350, 555, "rect", 120, 30, "yellow", "配电主站未配置");
+    var zdlxwpz = state(350, 495, "rect", 120, 30, "yellow", "终端离线未配置");
+    var pwkgwzbzq = state(370, 655, "rect", 100, 40, "yellow", "配网开关\n位置不正确");
+    var zdwt = state(150, 615, "ellipse", 80, 40, "yellow", "终端问题");
+    var ddzzwt = state(110, 690, "ellipse", 120, 40, "yellow", "调度主站问题");
+    var pdzzwt = state(150, 550, "ellipse", 120, 40, "yellow", "配电主站问题");
+    var zdwt1 = state(180, 490, "ellipse", 80, 40, "yellow", "终端问题");
+    var fazq = state(760, 780, "filletrect", 80, 40, "yellow", "FA准确");
+
+    //8. 创建连接线
+    link(start, pwcl, "", 0.5);
+    link(pwcl, faqzjh, "FA启动", 0.5);
+    link(faqzjh, xlxj, "否", 0.5);
+    link(faqzjh, fazjhyyfx, "是", 0.5);
+    link(fazjhyyfx, dlyxx, "", 0.5);
+    link(dlyxx, gjjtjy, "", 0.5);
+    link(fazjhyyfx, ssgz, "", 0.5).vertices([
+        new g.Point(520, 270),
+        new g.Point(520, 330)
+    ]);
+    link(xlxj, faxjjg, "", 0.5);
+    link(faxjjg, gzfwsh, "否", 0.5);
+    link(gzfwsh, fazxwb, "否", 0.5);
+    link(gzfwsh, fabzqyy, "是", 0.5);
+    link(fabzqyy, pdzzwpz, "", 0.5);
+    link(fabzqyy, zdlxwpz, "", 0.5).vertices([
+        new g.Point(500, 570),
+        new g.Point(500, 510)
+    ]);
+    link(fabzqyy, pwkgwzbzq, "", 0.5).vertices([
+        new g.Point(500, 570),
+        new g.Point(500, 605)
+    ]);
+    link(pwkgwzbzq, zdwt, "自动化开关", 0.7).vertices([
+        new g.Point(350, 675),
+        new g.Point(350, 635)
+    ]);
+    link(pwkgwzbzq, ddzzwt, "非自动化开关", 0.7).vertices([
+        new g.Point(350, 675),
+        new g.Point(350, 710)
+    ]);
+    link(pdzzwpz, pdzzwt, "", 0.5);
+    link(zdlxwpz, zdwt1, "", 0.5);
+    link(fazxwb, fazq, "是", 0.3);
+    link(fazxwb, ssgz, "未派工单", 0.7).vertices([
+        new g.Point(800, 760),
+        new g.Point(30, 760),
+        new g.Point(30, 330)
+    ]);
+
+    var a = "dkjgjo";
+    a.substring()
+
+</script>
+</body>
+</html>
