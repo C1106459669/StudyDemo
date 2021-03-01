@@ -52,7 +52,7 @@ public class UserController {
         tableHead.add("password");
 
         // 写数据到Excel文件
-        exportUtils.exportToExcel(response,"测试", "F:\\test","用户清单.xls", tableHead, data);
+        exportUtils.exportToExcel(response,"测试", "F:\\test","用户清单.xlsx", tableHead, data);
     }
 
 }
