@@ -28,11 +28,13 @@ public class JavaProgramTest {
 
     //判断101-200之间有多少个素数，并输出所有素数
     //只能被 1和自身 整除的数叫做素数，也叫做质数
+    //Math.sqrt(i) 获取一个数的正平方根
     @Test
     public void test2() {
         int count = 0;
         for(int i = 101; i < 200; i += 2) {
             boolean b = false;
+            double sqrt = Math.sqrt(i);
             for(int j = 2; j <= Math.sqrt(i); j++) {
                 if(i % j == 0) {
                     b = false;
